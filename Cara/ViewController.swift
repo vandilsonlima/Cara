@@ -15,6 +15,8 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     private lazy var previewLayer = AVCaptureVideoPreviewLayer(session: self.captureSession)
     private let videoDataOutput = AVCaptureVideoDataOutput()
 
+    private var drawings: [CAShapeLayer] = []
+
     override func viewDidLoad() {
         super.viewDidLoad()
         self.addCameraInput()
@@ -67,14 +69,72 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         let faceDetectionRequest = VNDetectFaceLandmarksRequest(completionHandler: { (request: VNRequest, error: Error?) in
             DispatchQueue.main.async {
                 if let results = request.results as? [VNFaceObservation], results.count > 0 {
-                    print("did detect \(results.count) face(s)")
+                    self.handleFaceDetectionResults(results)
                 } else {
-                    print("did not detect any face")
+                    self.clearDrawings()
                 }
             }
         })
         let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: image, orientation: .leftMirrored, options: [:])
         try? imageRequestHandler.perform([faceDetectionRequest])
+    }
+
+    private func handleFaceDetectionResults(_ observedFaces: [VNFaceObservation]) {
+        self.clearDrawings()
+        let facesBoundingBoxes: [CAShapeLayer] = observedFaces.flatMap({ (observedFace: VNFaceObservation) -> [CAShapeLayer] in
+            let faceBoundingBoxOnScreen = self.previewLayer.layerRectConverted(fromMetadataOutputRect: observedFace.boundingBox)
+            let faceBoundingBoxPath = CGPath(rect: faceBoundingBoxOnScreen, transform: nil)
+            let faceBoundingBoxShape = CAShapeLayer()
+            faceBoundingBoxShape.path = faceBoundingBoxPath
+            faceBoundingBoxShape.fillColor = UIColor.clear.cgColor
+            faceBoundingBoxShape.strokeColor = UIColor.green.cgColor
+            var newDrawings = [CAShapeLayer]()
+            newDrawings.append(faceBoundingBoxShape)
+            if let landmarks = observedFace.landmarks {
+                newDrawings = newDrawings + self.drawFaceFeatures(landmarks, screenBoundingBox: faceBoundingBoxOnScreen)
+            }
+            return newDrawings
+        })
+        facesBoundingBoxes.forEach({ faceBoundingBox in self.view.layer.addSublayer(faceBoundingBox) })
+        self.drawings = facesBoundingBoxes
+    }
+
+    private func clearDrawings() {
+        self.drawings.forEach({ drawing in drawing.removeFromSuperlayer() })
+    }
+
+    private func drawFaceFeatures(_ landmarks: VNFaceLandmarks2D, screenBoundingBox: CGRect) -> [CAShapeLayer] {
+        var faceFeaturesDrawings: [CAShapeLayer] = []
+
+        if let leftEye = landmarks.leftEye {
+            let eyeDrawing = self.drawEye(leftEye, screenBoundingBox: screenBoundingBox)
+            faceFeaturesDrawings.append(eyeDrawing)
+        }
+
+        if let rightEye = landmarks.rightEye {
+            let eyeDrawing = self.drawEye(rightEye, screenBoundingBox: screenBoundingBox)
+            faceFeaturesDrawings.append(eyeDrawing)
+        }
+        // draw other face features here
+        return faceFeaturesDrawings
+    }
+    private func drawEye(_ eye: VNFaceLandmarkRegion2D, screenBoundingBox: CGRect) -> CAShapeLayer {
+        let eyePath = CGMutablePath()
+        let eyePathPoints = eye.normalizedPoints
+            .map({ eyePoint in
+                CGPoint(
+                    x: eyePoint.y * screenBoundingBox.height + screenBoundingBox.origin.x,
+                    y: eyePoint.x * screenBoundingBox.width + screenBoundingBox.origin.y
+                )
+             })
+        eyePath.addLines(between: eyePathPoints)
+        eyePath.closeSubpath()
+        let eyeDrawing = CAShapeLayer()
+        eyeDrawing.path = eyePath
+        eyeDrawing.fillColor = UIColor.clear.cgColor
+        eyeDrawing.strokeColor = UIColor.green.cgColor
+
+        return eyeDrawing
     }
 }
 
