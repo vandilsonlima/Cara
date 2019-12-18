@@ -13,6 +13,7 @@
 		8832D37E23A9879200056FDA /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8832D37C23A9879200056FDA /* Main.storyboard */; };
 		8832D38023A9879700056FDA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8832D37F23A9879700056FDA /* Assets.xcassets */; };
 		8832D38323A9879700056FDA /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 8832D38123A9879700056FDA /* LaunchScreen.storyboard */; };
+		8832D38B23A99DFC00056FDA /* PhotoViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8832D38A23A99DFC00056FDA /* PhotoViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +25,7 @@
 		8832D37F23A9879700056FDA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8832D38223A9879700056FDA /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		8832D38423A9879700056FDA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		8832D38A23A99DFC00056FDA /* PhotoViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoViewController.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,6 +65,7 @@
 				8832D37F23A9879700056FDA /* Assets.xcassets */,
 				8832D38123A9879700056FDA /* LaunchScreen.storyboard */,
 				8832D38423A9879700056FDA /* Info.plist */,
+				8832D38A23A99DFC00056FDA /* PhotoViewController.swift */,
 			);
 			path = Cara;
 			sourceTree = "<group>";
@@ -139,6 +142,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8832D37B23A9879200056FDA /* ViewController.swift in Sources */,
+				8832D38B23A99DFC00056FDA /* PhotoViewController.swift in Sources */,
 				8832D37723A9879200056FDA /* AppDelegate.swift in Sources */,
 				8832D37923A9879200056FDA /* SceneDelegate.swift in Sources */,
 			);

@@ -10,24 +10,46 @@ import UIKit
 import AVFoundation
 import Vision
 
-class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
+class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate, AVCapturePhotoCaptureDelegate {
     private let captureSession = AVCaptureSession()
     private lazy var previewLayer = AVCaptureVideoPreviewLayer(session: self.captureSession)
     private let videoDataOutput = AVCaptureVideoDataOutput()
 
     private var drawings: [CAShapeLayer] = []
+    private var cameraInput: AVCaptureDeviceInput!
+    private let imageOutput = AVCapturePhotoOutput()
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        captureSession.sessionPreset = .photo
         self.addCameraInput()
         self.showCameraFeed()
         self.getCameraFrames()
+        self.addPhotoOutput()
         self.captureSession.startRunning()
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         self.previewLayer.frame = self.view.frame
+    }
+
+    private func takePhoto() {
+        //let settings = AVCapturePhotoSettings(format: [kCVPixelBufferPixelFormatTypeKey as String: imageOutput.availablePhotoPixelFormatTypes.last!])
+
+        let settings = AVCapturePhotoSettings(format: [
+            AVVideoCodecKey: AVVideoCodecType.jpeg,
+            AVVideoCompressionPropertiesKey: [
+                AVVideoQualityKey: 1
+            ]
+        ])
+
+        //AVVideoCompressionPropertiesKey is also supported, with a payload dictionary containing a single AVVideoQualityKey. Passing a nil format dictionary is analogous to calling +photoSettings.
+        imageOutput.capturePhoto(with: settings, delegate: self)
+    }
+
+    private func addPhotoOutput() {
+        captureSession.addOutput(imageOutput)
     }
 
     private func addCameraInput() {
@@ -37,7 +59,7 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
             position: .front).devices.first else {
                fatalError("No back camera device found, please make sure to run SimpleLaneDetection in an iOS device and not a simulator")
         }
-        let cameraInput = try! AVCaptureDeviceInput(device: device)
+        cameraInput = try! AVCaptureDeviceInput(device: device)
         self.captureSession.addInput(cameraInput)
     }
 
@@ -68,8 +90,9 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
     private func detectFace(in image: CVPixelBuffer) {
         let faceDetectionRequest = VNDetectFaceLandmarksRequest(completionHandler: { (request: VNRequest, error: Error?) in
             DispatchQueue.main.async {
-                if let results = request.results as? [VNFaceObservation], results.count > 0 {
+                if let results = request.results as? [VNFaceObservation], results.count == 1 {
                     self.handleFaceDetectionResults(results)
+                    //self.checkPhoto(observation: results[0])
                 } else {
                     self.clearDrawings()
                 }
@@ -135,6 +158,33 @@ class ViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDele
         eyeDrawing.strokeColor = UIColor.green.cgColor
 
         return eyeDrawing
+    }
+
+    func checkPhoto(observation: VNFaceObservation) {
+//        print("Roll: \(observation.roll?.floatValue ?? 0)")
+//        print("Yaw: \(observation.yaw?.floatValue ?? 0)")
+//        print("rightEye: \(observation.landmarks?.rightEye == nil)")
+//        print("leftEye: \(observation.landmarks?.leftEye == nil)")
+//        print("rightPupil: \(observation.landmarks?.rightPupil == nil)")
+//        print("leftPupil: \(observation.landmarks?.leftPupil == nil)")
+//        print("innerLips: \(observation.landmarks?.innerLips == nil)")
+//        print("outerLips: \(observation.landmarks?.outerLips == nil)")
+//        print("nose: \(observation.landmarks?.nose == nil)")
+//        print("medianLine: \(observation.landmarks?.medianLine == nil)")
+//        print("leftEyebrow: \(observation.landmarks?.leftEyebrow == nil)")
+//        print("rightEyebrow \(observation.landmarks?.rightEyebrow == nil)")
+//        print("noseCrest \(observation.landmarks?.noseCrest == nil)")
+        takePhoto()
+    }
+
+    func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
+        guard error == nil else {
+            print(error!.localizedDescription)
+            return
+        }
+        let vc = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "PhotoViewController") as! PhotoViewController
+        vc.image = UIImage(data: photo.fileDataRepresentation()!)
+        present(vc, animated: true)
     }
 }
 
